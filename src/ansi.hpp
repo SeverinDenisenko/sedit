@@ -20,8 +20,18 @@ namespace ansi {
         unsigned char value;
     };
 
+    namespace alternate {
+        std::string on(){
+            return fmt::format("{}[?1049h", esc);
+        }
+
+        std::string off(){
+            return fmt::format("{}[?1049l", esc);
+        }
+    }
+
     namespace cursor {
-        [[deprecated]] std::string home() {
+        std::string home() {
             return fmt::format("{}[{}", esc, "H");
         }
 
@@ -43,6 +53,14 @@ namespace ansi {
 
         std::string right(unsigned int columns = 1) {
             return fmt::format("{}[{}{}", esc, columns, "C");
+        }
+
+        std::string hide() {
+            return fmt::format("{}[?25l", esc);
+        }
+
+        std::string show() {
+            return fmt::format("{}[?25h", esc);
         }
     }
     namespace erase {
