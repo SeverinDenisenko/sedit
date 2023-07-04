@@ -7,8 +7,15 @@
 
 #include <fmt/format.h>
 
+#include "utils.hpp"
+
+namespace keys {
+    const char esc = 27;
+    const char ctrl = 27;
+}
+
 namespace ansi {
-    inline const char* esc = "\u001b";
+    using namespace keys;
 
     class code {
     public:
@@ -31,28 +38,33 @@ namespace ansi {
     }
 
     namespace cursor {
+        struct position_t {
+            int row {1};
+            int column {1};
+        };
+
         std::string home() {
-            return fmt::format("{}[{}", esc, "H");
+            return fmt::format("{}[H", esc);
         }
 
-        std::string go(unsigned int line, unsigned int column) {
-            return fmt::format("{}[{};{}{}", esc, line, column, "f");
+        std::string go(unsigned int row, unsigned int column) {
+            return fmt::format("{}[{};{}f", esc, row, column);
         }
 
         std::string up(unsigned int lines = 1) {
-            return fmt::format("{}[{}{}", esc, lines, "A");
+            return fmt::format("{}[{}A", esc, lines);
         }
 
         std::string down(unsigned int lines = 1) {
-            return fmt::format("{}[{}{}", esc, lines, "B");
+            return fmt::format("{}[{}B", esc, lines);
         }
 
         std::string left(unsigned int columns = 1) {
-            return fmt::format("{}[{}{}", esc, columns, "D");
+            return fmt::format("{}[{}D", esc, columns);
         }
 
         std::string right(unsigned int columns = 1) {
-            return fmt::format("{}[{}{}", esc, columns, "C");
+            return fmt::format("{}[{}C", esc, columns);
         }
 
         std::string hide() {
@@ -62,14 +74,50 @@ namespace ansi {
         std::string show() {
             return fmt::format("{}[?25h", esc);
         }
+
+        std::string position(){
+            return fmt::format("{}[6n", esc);
+        }
+
+        position_t get(){
+            position_t result;
+            std::string response;
+
+            for (int i = 0; i < 32; ++i) {
+                char c;
+                try {
+                    c = utils::get();
+                } catch (utils::cant_get_char_exception& ex) {
+                    break;
+                }
+
+                response += c;
+                if (c == 'R')
+                    break;
+            }
+
+            std::regex regex("[0-9]+");
+            auto begin = std::sregex_iterator(response.begin(), response.end(), regex);
+            auto end = std::sregex_iterator();
+
+            if (std::distance(begin, end) != 1)
+                throw std::runtime_error("can't get cursor position");
+
+            std::sregex_iterator iter = begin;
+            result.row = std::stoi(iter->str());
+            ++iter;
+            result.column = std::stoi(iter->str());
+
+            return result;
+        }
     }
     namespace erase {
         std::string line() {
-            return fmt::format("{}[{}{}", esc, 2, "K");
+            return fmt::format("{}[2K", esc);
         }
 
         std::string screen() {
-            return fmt::format("{}[{}{}", esc, 2, "J");
+            return fmt::format("{}[2J", esc);
         }
     }
     namespace styles {
