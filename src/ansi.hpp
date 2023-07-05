@@ -5,13 +5,11 @@
 #ifndef SEDIT_ANSI_HPP
 #define SEDIT_ANSI_HPP
 
-#include <fmt/format.h>
-
 #include "utils.hpp"
 
 namespace keys {
-    const char esc = 27;
-    const char ctrl = 27;
+    inline const char esc = 27;
+    inline const char ctrl = 27;
 }
 
 namespace ansi {
@@ -28,13 +26,9 @@ namespace ansi {
     };
 
     namespace alternate {
-        std::string on(){
-            return fmt::format("{}[?1049h", esc);
-        }
+        std::string on();
 
-        std::string off(){
-            return fmt::format("{}[?1049l", esc);
-        }
+        std::string off();
     }
 
     namespace cursor {
@@ -43,82 +37,32 @@ namespace ansi {
             int column {1};
         };
 
-        std::string home() {
-            return fmt::format("{}[H", esc);
-        }
+        std::string home();
 
-        std::string go(unsigned int row, unsigned int column) {
-            return fmt::format("{}[{};{}f", esc, row, column);
-        }
+        std::string go(unsigned int row, unsigned int column);
 
-        std::string up(unsigned int lines = 1) {
-            return fmt::format("{}[{}A", esc, lines);
-        }
+        std::string up(unsigned int lines = 1);
 
-        std::string down(unsigned int lines = 1) {
-            return fmt::format("{}[{}B", esc, lines);
-        }
+        std::string down(unsigned int lines = 1);
 
-        std::string left(unsigned int columns = 1) {
-            return fmt::format("{}[{}D", esc, columns);
-        }
+        std::string left(unsigned int columns = 1);
 
-        std::string right(unsigned int columns = 1) {
-            return fmt::format("{}[{}C", esc, columns);
-        }
+        std::string right(unsigned int columns = 1);
 
-        std::string hide() {
-            return fmt::format("{}[?25l", esc);
-        }
+        std::string max();
 
-        std::string show() {
-            return fmt::format("{}[?25h", esc);
-        }
+        std::string hide();
 
-        std::string position(){
-            return fmt::format("{}[6n", esc);
-        }
+        std::string show();
 
-        position_t get(){
-            position_t result;
-            std::string response;
+        std::string position();
 
-            for (int i = 0; i < 32; ++i) {
-                char c;
-                try {
-                    c = utils::get();
-                } catch (utils::cant_get_char_exception& ex) {
-                    break;
-                }
-
-                response += c;
-                if (c == 'R')
-                    break;
-            }
-
-            std::regex regex("[0-9]+");
-            auto begin = std::sregex_iterator(response.begin(), response.end(), regex);
-            auto end = std::sregex_iterator();
-
-            if (std::distance(begin, end) != 1)
-                throw std::runtime_error("can't get cursor position");
-
-            std::sregex_iterator iter = begin;
-            result.row = std::stoi(iter->str());
-            ++iter;
-            result.column = std::stoi(iter->str());
-
-            return result;
-        }
+        position_t get();
     }
     namespace erase {
-        std::string line() {
-            return fmt::format("{}[2K", esc);
-        }
+        std::string line();
 
-        std::string screen() {
-            return fmt::format("{}[2J", esc);
-        }
+        std::string screen();
     }
     namespace styles {
         namespace set {
@@ -127,14 +71,14 @@ namespace ansi {
                 explicit code(unsigned char value) : ansi::code(value) {}
             };
 
-            code bold(1);
-            code faint(2);
-            code italic(3);
-            code underline(4);
-            code blinking(5);
-            code reverse(6);
-            code invisible(7);
-            code strikethrough(8);
+            inline code bold(1);
+            inline code faint(2);
+            inline code italic(3);
+            inline code underline(4);
+            inline code blinking(5);
+            inline code reverse(6);
+            inline code invisible(7);
+            inline code strikethrough(8);
         }
         namespace reset {
             class code : public ansi::code {
@@ -142,14 +86,14 @@ namespace ansi {
                 explicit code(unsigned char value) : ansi::code(value) {}
             };
 
-            code bold(22);
-            code faint(22);
-            code italic(23);
-            code underline(24);
-            code blinking(25);
-            code reverse(26);
-            code invisible(27);
-            code strikethrough(28);
+            inline code bold(22);
+            inline code faint(22);
+            inline code italic(23);
+            inline code underline(24);
+            inline code blinking(25);
+            inline code reverse(26);
+            inline code invisible(27);
+            inline code strikethrough(28);
         }
     }
     namespace colors {
@@ -160,15 +104,15 @@ namespace ansi {
                     explicit code(unsigned char value) : ansi::code(value) {}
                 };
 
-                code black(30);
-                code red(31);
-                code green(32);
-                code yellow(33);
-                code blue(34);
-                code magenta(35);
-                code cyan(36);
-                code white(37);
-                code reset(0);
+                inline code black(30);
+                inline code red(31);
+                inline code green(32);
+                inline code yellow(33);
+                inline code blue(34);
+                inline code magenta(35);
+                inline code cyan(36);
+                inline code white(37);
+                inline code reset(0);
             }
             namespace bg {
                 class code : public ansi::code {
@@ -176,15 +120,15 @@ namespace ansi {
                     explicit code(unsigned char value) : ansi::code(value) {}
                 };
 
-                code black(40);
-                code red(41);
-                code green(42);
-                code yellow(43);
-                code blue(44);
-                code magenta(45);
-                code cyan(46);
-                code white(47);
-                code reset(0);
+                inline code black(40);
+                inline code red(41);
+                inline code green(42);
+                inline code yellow(43);
+                inline code blue(44);
+                inline code magenta(45);
+                inline code cyan(46);
+                inline code white(47);
+                inline code reset(0);
             }
         }
         namespace big {
@@ -193,309 +137,287 @@ namespace ansi {
                 explicit code(unsigned char value) : ansi::code(value) {}
             };
 
-            code Black(0);
-            code Maroon(1);
-            code Green(2);
-            code Olive(3);
-            code Navy(4);
-            code Purple(5);
-            code Teal(6);
-            code Silver(7);
-            code Grey(8);
-            code Red(9);
-            code Lime(10);
-            code Yellow(11);
-            code Blue(12);
-            code Fuchsi(13);
-            code Aqua(14);
-            code White(15);
-            code Grey0(16);
-            code NavyBlue(17);
-            code DarkBlue(18);
-            code Blue3(19);
-            code Blue3A(20);
-            code Blue1(21);
-            code DarkGreen(22);
-            code DeepSkyBlue4(23);
-            code DeepSkyBlue4B(24);
-            code DeepSkyBlue4A(25);
-            code DodgerBlue3(26);
-            code DodgerBlue2(27);
-            code Green4(28);
-            code SpringGreen4(29);
-            code Turquoise4(30);
-            code DeepSkyBlue3(31);
-            code DeepSkyBlue3A(32);
-            code DodgerBlue1(33);
-            code Green3(34);
-            code SpringGreen3(35);
-            code DarkCyan(36);
-            code LightSeaGreen(37);
-            code DeepSkyBlue2(38);
-            code DeepSkyBlue1(39);
-            code Green3A(40);
-            code SpringGreen3A(41);
-            code SpringGreen2(42);
-            code Cyan3(43);
-            code DarkTurquoise(44);
-            code Turquoise2(45);
-            code Green1(46);
-            code SpringGreen2A(47);
-            code SpringGreen1(48);
-            code MediumSpringGreen(49);
-            code Cyan2(50);
-            code Cyan1(51);
-            code DarkRed(52);
-            code DeepPink4(53);
-            code Purple4(54);
-            code Purple4A(55);
-            code Purple3(56);
-            code BlueViolet(57);
-            code Orange4(58);
-            code Grey37(59);
-            code MediumPurple4(60);
-            code SlateBlue3(61);
-            code SlateBlue3A(62);
-            code RoyalBlue1(63);
-            code Chartreuse4(64);
-            code DarkSeaGreen4(65);
-            code PaleTurquoise4(66);
-            code SteelBlue(67);
-            code SteelBlue3(68);
-            code CornflowerBlue(69);
-            code Chartreuse3(70);
-            code DarkSeaGreen4A(71);
-            code CadetBlue(72);
-            code CadetBlueA(73);
-            code SkyBlue3(74);
-            code SteelBlue1(75);
-            code Chartreuse3A(76);
-            code PaleGreen3(77);
-            code SeaGreen3(78);
-            code Aquamarine3(79);
-            code MediumTurquoise(80);
-            code SteelBlue1A(81);
-            code Chartreuse2(82);
-            code SeaGreen2(83);
-            code SeaGreen1(84);
-            code SeaGreen1A(85);
-            code Aquamarine1(86);
-            code DarkSlateGray2(87);
-            code DarkRedA(88);
-            code DeepPink4B(89);
-            code DarkMagenta(90);
-            code DarkMagentaA(91);
-            code DarkViolet(92);
-            code PurpleA(93);
-            code Orange4A(94);
-            code LightPink4(95);
-            code Plum4(96);
-            code MediumPurple3(97);
-            code MediumPurple3A(98);
-            code SlateBlue1(99);
-            code Yellow4(100);
-            code Wheat4(101);
-            code Grey53(102);
-            code LightSlateGrey(103);
-            code MediumPurple(104);
-            code LightSlateBlue(105);
-            code Yellow4A(106);
-            code DarkOliveGreen3(107);
-            code DarkSeaGreen(108);
-            code LightSkyBlue3(109);
-            code LightSkyBlue3A(110);
-            code SkyBlue2(111);
-            code Chartreuse2A(112);
-            code DarkOliveGreen3A(113);
-            code PaleGreen3A(114);
-            code DarkSeaGreen3(115);
-            code DarkSlateGray3(116);
-            code SkyBlue1(117);
-            code Chartreuse1(118);
-            code LightGreen(119);
-            code LightGreenA(120);
-            code PaleGreen1(121);
-            code Aquamarine1A(122);
-            code DarkSlateGray1(123);
-            code Red3(124);
-            code DeepPink4A(125);
-            code MediumVioletRed(126);
-            code Magenta3(127);
-            code DarkVioletA(128);
-            code PurpleB(129);
-            code DarkOrange3(130);
-            code IndianRed(131);
-            code HotPink3(132);
-            code MediumOrchid3(133);
-            code MediumOrchid(134);
-            code MediumPurple2(135);
-            code DarkGoldenrod(136);
-            code LightSalmon3(137);
-            code RosyBrown(138);
-            code Grey63(139);
-            code MediumPurple2A(140);
-            code MediumPurple1(141);
-            code Gold3(142);
-            code DarkKhaki(143);
-            code NavajoWhite3(144);
-            code Grey69(145);
-            code LightSteelBlue3(146);
-            code LightSteelBlue(147);
-            code Yellow3(148);
-            code DarkOliveGreen3B(149);
-            code DarkSeaGreen3A(150);
-            code DarkSeaGreen2(151);
-            code LightCyan3(152);
-            code LightSkyBlue1(153);
-            code GreenYellow(154);
-            code DarkOliveGreen2(155);
-            code PaleGreen1A(156);
-            code DarkSeaGreen2A(157);
-            code DarkSeaGreen1(158);
-            code PaleTurquoise1(159);
-            code Red3A(160);
-            code DeepPink3(161);
-            code DeepPink3A(162);
-            code Magenta3B(163);
-            code Magenta3A(164);
-            code Magenta2(165);
-            code DarkOrange3A(166);
-            code IndianRedA(167);
-            code HotPink3A(168);
-            code HotPink2(169);
-            code Orchid(170);
-            code MediumOrchid1(171);
-            code Orange3(172);
-            code LightSalmon3A(173);
-            code LightPink3(174);
-            code Pink3(175);
-            code Plum3(176);
-            code Violet(177);
-            code Gold3A(178);
-            code LightGoldenrod3(179);
-            code Tan(180);
-            code MistyRose3(181);
-            code Thistle3(182);
-            code Plum2(183);
-            code Yellow3A(184);
-            code Khaki3(185);
-            code LightGoldenrod2(186);
-            code LightYellow3(187);
-            code Grey84(188);
-            code LightSteelBlue1(189);
-            code Yellow2(190);
-            code DarkOliveGreen1(191);
-            code DarkOliveGreen1A(192);
-            code DarkSeaGreen1A(193);
-            code Honeydew2(194);
-            code LightCyan1(195);
-            code Red1(196);
-            code DeepPink2(197);
-            code DeepPink1(198);
-            code DeepPink1A(199);
-            code Magenta2A(200);
-            code Magenta1(201);
-            code OrangeRed1(202);
-            code IndianRed1(203);
-            code IndianRed1A(204);
-            code HotPink(205);
-            code HotPinkA(206);
-            code MediumOrchid1A(207);
-            code DarkOrange(208);
-            code Salmon1(209);
-            code LightCoral(210);
-            code PaleVioletRed1(211);
-            code Orchid2(212);
-            code Orchid1(213);
-            code Orange1(214);
-            code SandyBrown(215);
-            code LightSalmon1(216);
-            code LightPink1(217);
-            code Pink1(218);
-            code Plum1(219);
-            code Gold1(220);
-            code LightGoldenrod2A(221);
-            code LightGoldenrod2B(222);
-            code NavajoWhite1(223);
-            code MistyRose1(224);
-            code Thistle1(225);
-            code Yellow1(226);
-            code LightGoldenrod1(227);
-            code Khaki1(228);
-            code Wheat1(229);
-            code Cornsilk1(230);
-            code Grey100(231);
-            code Grey3(232);
-            code Grey7(233);
-            code Grey11(234);
-            code Grey15(235);
-            code Grey19(236);
-            code Grey23(237);
-            code Grey27(238);
-            code Grey30(239);
-            code Grey35(240);
-            code Grey39(241);
-            code Grey42(242);
-            code Grey46(243);
-            code Grey50(244);
-            code Grey54(245);
-            code Grey58(246);
-            code Grey62(247);
-            code Grey66(248);
-            code Grey70(249);
-            code Grey74(250);
-            code Grey78(251);
-            code Grey82(252);
-            code Grey85(253);
-            code Grey89(254);
-            code Grey93(255);
+            inline code Black(0);
+            inline code Maroon(1);
+            inline code Green(2);
+            inline code Olive(3);
+            inline code Navy(4);
+            inline code Purple(5);
+            inline code Teal(6);
+            inline code Silver(7);
+            inline code Grey(8);
+            inline code Red(9);
+            inline code Lime(10);
+            inline code Yellow(11);
+            inline code Blue(12);
+            inline code Fuchsi(13);
+            inline code Aqua(14);
+            inline code White(15);
+            inline code Grey0(16);
+            inline code NavyBlue(17);
+            inline code DarkBlue(18);
+            inline code Blue3(19);
+            inline code Blue3A(20);
+            inline code Blue1(21);
+            inline code DarkGreen(22);
+            inline code DeepSkyBlue4(23);
+            inline code DeepSkyBlue4B(24);
+            inline code DeepSkyBlue4A(25);
+            inline code DodgerBlue3(26);
+            inline code DodgerBlue2(27);
+            inline code Green4(28);
+            inline code SpringGreen4(29);
+            inline code Turquoise4(30);
+            inline code DeepSkyBlue3(31);
+            inline code DeepSkyBlue3A(32);
+            inline code DodgerBlue1(33);
+            inline code Green3(34);
+            inline code SpringGreen3(35);
+            inline code DarkCyan(36);
+            inline code LightSeaGreen(37);
+            inline code DeepSkyBlue2(38);
+            inline code DeepSkyBlue1(39);
+            inline code Green3A(40);
+            inline code SpringGreen3A(41);
+            inline code SpringGreen2(42);
+            inline code Cyan3(43);
+            inline code DarkTurquoise(44);
+            inline code Turquoise2(45);
+            inline code Green1(46);
+            inline code SpringGreen2A(47);
+            inline code SpringGreen1(48);
+            inline code MediumSpringGreen(49);
+            inline code Cyan2(50);
+            inline code Cyan1(51);
+            inline code DarkRed(52);
+            inline code DeepPink4(53);
+            inline code Purple4(54);
+            inline code Purple4A(55);
+            inline code Purple3(56);
+            inline code BlueViolet(57);
+            inline code Orange4(58);
+            inline code Grey37(59);
+            inline code MediumPurple4(60);
+            inline code SlateBlue3(61);
+            inline code SlateBlue3A(62);
+            inline code RoyalBlue1(63);
+            inline code Chartreuse4(64);
+            inline code DarkSeaGreen4(65);
+            inline code PaleTurquoise4(66);
+            inline code SteelBlue(67);
+            inline code SteelBlue3(68);
+            inline code CornflowerBlue(69);
+            inline code Chartreuse3(70);
+            inline code DarkSeaGreen4A(71);
+            inline code CadetBlue(72);
+            inline code CadetBlueA(73);
+            inline code SkyBlue3(74);
+            inline code SteelBlue1(75);
+            inline code Chartreuse3A(76);
+            inline code PaleGreen3(77);
+            inline code SeaGreen3(78);
+            inline code Aquamarine3(79);
+            inline code MediumTurquoise(80);
+            inline code SteelBlue1A(81);
+            inline code Chartreuse2(82);
+            inline code SeaGreen2(83);
+            inline code SeaGreen1(84);
+            inline code SeaGreen1A(85);
+            inline code Aquamarine1(86);
+            inline code DarkSlateGray2(87);
+            inline code DarkRedA(88);
+            inline code DeepPink4B(89);
+            inline code DarkMagenta(90);
+            inline code DarkMagentaA(91);
+            inline code DarkViolet(92);
+            inline code PurpleA(93);
+            inline code Orange4A(94);
+            inline code LightPink4(95);
+            inline code Plum4(96);
+            inline code MediumPurple3(97);
+            inline code MediumPurple3A(98);
+            inline code SlateBlue1(99);
+            inline code Yellow4(100);
+            inline code Wheat4(101);
+            inline code Grey53(102);
+            inline code LightSlateGrey(103);
+            inline code MediumPurple(104);
+            inline code LightSlateBlue(105);
+            inline code Yellow4A(106);
+            inline code DarkOliveGreen3(107);
+            inline code DarkSeaGreen(108);
+            inline code LightSkyBlue3(109);
+            inline code LightSkyBlue3A(110);
+            inline code SkyBlue2(111);
+            inline code Chartreuse2A(112);
+            inline code DarkOliveGreen3A(113);
+            inline code PaleGreen3A(114);
+            inline code DarkSeaGreen3(115);
+            inline code DarkSlateGray3(116);
+            inline code SkyBlue1(117);
+            inline code Chartreuse1(118);
+            inline code LightGreen(119);
+            inline code LightGreenA(120);
+            inline code PaleGreen1(121);
+            inline code Aquamarine1A(122);
+            inline code DarkSlateGray1(123);
+            inline code Red3(124);
+            inline code DeepPink4A(125);
+            inline code MediumVioletRed(126);
+            inline code Magenta3(127);
+            inline code DarkVioletA(128);
+            inline code PurpleB(129);
+            inline code DarkOrange3(130);
+            inline code IndianRed(131);
+            inline code HotPink3(132);
+            inline code MediumOrchid3(133);
+            inline code MediumOrchid(134);
+            inline code MediumPurple2(135);
+            inline code DarkGoldenrod(136);
+            inline code LightSalmon3(137);
+            inline code RosyBrown(138);
+            inline code Grey63(139);
+            inline code MediumPurple2A(140);
+            inline code MediumPurple1(141);
+            inline code Gold3(142);
+            inline code DarkKhaki(143);
+            inline code NavajoWhite3(144);
+            inline code Grey69(145);
+            inline code LightSteelBlue3(146);
+            inline code LightSteelBlue(147);
+            inline code Yellow3(148);
+            inline code DarkOliveGreen3B(149);
+            inline code DarkSeaGreen3A(150);
+            inline code DarkSeaGreen2(151);
+            inline code LightCyan3(152);
+            inline code LightSkyBlue1(153);
+            inline code GreenYellow(154);
+            inline code DarkOliveGreen2(155);
+            inline code PaleGreen1A(156);
+            inline code DarkSeaGreen2A(157);
+            inline code DarkSeaGreen1(158);
+            inline code PaleTurquoise1(159);
+            inline code Red3A(160);
+            inline code DeepPink3(161);
+            inline code DeepPink3A(162);
+            inline code Magenta3B(163);
+            inline code Magenta3A(164);
+            inline code Magenta2(165);
+            inline code DarkOrange3A(166);
+            inline code IndianRedA(167);
+            inline code HotPink3A(168);
+            inline code HotPink2(169);
+            inline code Orchid(170);
+            inline code MediumOrchid1(171);
+            inline code Orange3(172);
+            inline code LightSalmon3A(173);
+            inline code LightPink3(174);
+            inline code Pink3(175);
+            inline code Plum3(176);
+            inline code Violet(177);
+            inline code Gold3A(178);
+            inline code LightGoldenrod3(179);
+            inline code Tan(180);
+            inline code MistyRose3(181);
+            inline code Thistle3(182);
+            inline code Plum2(183);
+            inline code Yellow3A(184);
+            inline code Khaki3(185);
+            inline code LightGoldenrod2(186);
+            inline code LightYellow3(187);
+            inline code Grey84(188);
+            inline code LightSteelBlue1(189);
+            inline code Yellow2(190);
+            inline code DarkOliveGreen1(191);
+            inline code DarkOliveGreen1A(192);
+            inline code DarkSeaGreen1A(193);
+            inline code Honeydew2(194);
+            inline code LightCyan1(195);
+            inline code Red1(196);
+            inline code DeepPink2(197);
+            inline code DeepPink1(198);
+            inline code DeepPink1A(199);
+            inline code Magenta2A(200);
+            inline code Magenta1(201);
+            inline code OrangeRed1(202);
+            inline code IndianRed1(203);
+            inline code IndianRed1A(204);
+            inline code HotPink(205);
+            inline code HotPinkA(206);
+            inline code MediumOrchid1A(207);
+            inline code DarkOrange(208);
+            inline code Salmon1(209);
+            inline code LightCoral(210);
+            inline code PaleVioletRed1(211);
+            inline code Orchid2(212);
+            inline code Orchid1(213);
+            inline code Orange1(214);
+            inline code SandyBrown(215);
+            inline code LightSalmon1(216);
+            inline code LightPink1(217);
+            inline code Pink1(218);
+            inline code Plum1(219);
+            inline code Gold1(220);
+            inline code LightGoldenrod2A(221);
+            inline code LightGoldenrod2B(222);
+            inline code NavajoWhite1(223);
+            inline code MistyRose1(224);
+            inline code Thistle1(225);
+            inline code Yellow1(226);
+            inline code LightGoldenrod1(227);
+            inline code Khaki1(228);
+            inline code Wheat1(229);
+            inline code Cornsilk1(230);
+            inline code Grey100(231);
+            inline code Grey3(232);
+            inline code Grey7(233);
+            inline code Grey11(234);
+            inline code Grey15(235);
+            inline code Grey19(236);
+            inline code Grey23(237);
+            inline code Grey27(238);
+            inline code Grey30(239);
+            inline code Grey35(240);
+            inline code Grey39(241);
+            inline code Grey42(242);
+            inline code Grey46(243);
+            inline code Grey50(244);
+            inline code Grey54(245);
+            inline code Grey58(246);
+            inline code Grey62(247);
+            inline code Grey66(248);
+            inline code Grey70(249);
+            inline code Grey74(250);
+            inline code Grey78(251);
+            inline code Grey82(252);
+            inline code Grey85(253);
+            inline code Grey89(254);
+            inline code Grey93(255);
         }
         namespace rgb {
-            std::string bg(unsigned char r, unsigned char g, unsigned char b) {
-                return fmt::format("{}[48;2;{};{};{}m", esc, r, g, b);
-            }
+            std::string bg(unsigned char r, unsigned char g, unsigned char b);
 
-            std::string fg(unsigned char r, unsigned char g, unsigned char b) {
-                return fmt::format("{}[38;2;{};{};{}m", esc, r, g, b);
-            }
+            std::string fg(unsigned char r, unsigned char g, unsigned char b);
         }
     }
 
-    std::string style(styles::set::code style, colors::small::bg::code bg, colors::small::fg::code fg) {
-        return fmt::format("{}[{};{};{}m", esc, style(), bg(), fg());
-    }
+    std::string style(styles::set::code style, colors::small::bg::code bg, colors::small::fg::code fg);
 
-    std::string style(styles::reset::code style, colors::small::bg::code bg, colors::small::fg::code fg) {
-        return fmt::format("{}[{};{};{}m", esc, style(), bg(), fg());
-    }
+    std::string style(styles::reset::code style, colors::small::bg::code bg, colors::small::fg::code fg);
 
-    std::string style(styles::set::code style) {
-        return fmt::format("{}[{}m", esc, style());
-    }
+    std::string style(styles::set::code style);
 
-    std::string style(styles::reset::code style) {
-        return fmt::format("{}[{}m", esc, style());
-    }
+    std::string style(styles::reset::code style);
 
-    std::string color(colors::small::bg::code color) {
-        return fmt::format("{}[{}m", esc, color());
-    }
+    std::string color(colors::small::bg::code color);
 
-    std::string color(colors::small::fg::code color) {
-        return fmt::format("{}[{}m", esc, color());
-    }
+    std::string color(colors::small::fg::code color);
 
-    std::string color(colors::small::bg::code bg, colors::small::fg::code fg) {
-        return fmt::format("{}[{};{}m", esc, bg(), fg());
-    }
+    std::string color(colors::small::bg::code bg, colors::small::fg::code fg);
 
-    std::string color(colors::big::code fg, colors::big::code bg) {
-        return fmt::format("{}[38;5;{}m{}[48;5;{}m", esc, fg(), esc, bg());
-    }
+    std::string color(colors::big::code fg, colors::big::code bg);
 
-    std::string color(colors::big::code fg) {
-        return fmt::format("{}[38;5;{}m", esc, fg());
-    }
+    std::string color(colors::big::code fg);
 
 }
 
