@@ -21,11 +21,6 @@ public:
 
 class terminal {
 public:
-    terminal();
-
-    ~terminal();
-
-protected:
     struct window_t {
         int rows;
         int columns;
@@ -33,8 +28,11 @@ protected:
 
     window_t window{};
     ansi::cursor::position_t position = {1, 1};
-    void update(const std::string& buffer);
 
+    terminal();
+    ~terminal();
+
+    void render(const std::string& buffer);
     ansi::cursor::position_t getCursorPosition();
     window_t getWindow();
 

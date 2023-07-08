@@ -4,9 +4,14 @@
 
 #include "terminal.hpp"
 #include "command_queue.hpp"
+#include "input_parser.hpp"
 
-class editor : public terminal {
+class editor {
 public:
+    explicit editor(const std::string& text){
+        text_ = text;
+    }
+
     void run() {
         using namespace colors::small;
         using namespace colors;
@@ -24,40 +29,41 @@ public:
 private:
     using actor = std::packaged_task<void()>;
 
-    command_queue<void> commands;
-    std::string text;
-    std::atomic<bool> exit = false;
+    command_queue<void> commands_;
+    std::string text_;
+    std::atomic<bool> exit_ = false;
+    terminal term;
 
     void processControlSequence() {
-        char c = char_utils::get(exit);
+        char c = char_utils::get(exit_);
 
         switch (c) {
             case '[': {
-                c = char_utils::get(exit);
+                c = char_utils::get(exit_);
 
                 switch (c) {
                     case 'A':
-                        commands.emplace([this]() {
-                            if (position.row > 1)
-                                terminal::position.row -= 1;
+                        commands_.emplace([this]() {
+                            if (term.position.row > 1)
+                                term.position.row -= 1;
                         });
                         break;
                     case 'B':
-                        commands.emplace([this]() {
-                            if (position.row < window.rows)
-                                position.row += 1;
+                        commands_.emplace([this]() {
+                            if (term.position.row < term.window.rows)
+                                term.position.row += 1;
                         });
                         break;
                     case 'C':
-                        commands.emplace([this]() {
-                            if (position.column < window.columns)
-                                position.column += 1;
+                        commands_.emplace([this]() {
+                            if (term.position.column < term. window.columns)
+                                term.position.column += 1;
                         });
                         break;
                     case 'D':
-                        commands.emplace([this]() {
-                            if (terminal::position.column > 1)
-                                terminal::position.column -= 1;
+                        commands_.emplace([this]() {
+                            if (term.position.column > 1)
+                                term.position.column -= 1;
                         });
                         break;
                     default:
@@ -72,36 +78,36 @@ private:
 
     actor reader = actor([this]() {
         while (true) {
-            char c = char_utils::get(exit);
-            if (exit)
+            char c = char_utils::get(exit_);
+            if (exit_)
                 return;
 
             if (char_utils::printable(c)) {
-                commands.emplace([c, this]() {
-                    text += c;
-                    position.column++;
+                commands_.emplace([c, this]() {
+                    text_ += c;
+                    term.position.column++;
                 });
             } else {
                 switch (c) {
                     case backspace:
-                        commands.emplace([this]() {
-                            if (!text.empty()) {
-                                text.pop_back();
-                                position.column--;
+                        commands_.emplace([this]() {
+                            if (!text_.empty()) {
+                                text_.pop_back();
+                                term.position.column--;
                             }
                         });
                         break;
                     case newline:
-                        commands.emplace([this]() {
-                            text += '\r';
-                            text += '\n';
-                            position.column = 1;
-                            position.row++;
+                        commands_.emplace([this]() {
+                            text_ += '\r';
+                            text_ += '\n';
+                            term.position.column = 1;
+                            term.position.row++;
                         });
                         break;
                     case esc & 'q':
-                        commands.emplace([this]() {
-                            exit = true;
+                        commands_.emplace([this]() {
+                            exit_ = true;
                         });
                         break;
                     case esc:
@@ -115,9 +121,9 @@ private:
 
     actor processor = actor([this]() {
         while (true) {
-            commands.wait_for_data(exit);
-            commands.pop();
-            if (exit)
+            commands_.wait_for_data(exit_);
+            commands_.pop();
+            if (exit_)
                 return;
         }
     });
@@ -129,10 +135,18 @@ private:
         time_point<std::chrono::system_clock> t = system_clock::now();
 
         while (true) {
-            if (exit)
+            if (exit_)
                 return;
 
-            update(text);
+            std::string buffer;
+
+            for(char i: text_){
+                if (i == '\n')
+                    buffer += '\r';
+                buffer += i;
+            }
+
+            term.render(buffer);
             t += 50ms;
             std::this_thread::sleep_until(t);
         }
@@ -140,13 +154,23 @@ private:
 };
 
 
-int main() {
-    try {
-        editor ed;
-        ed.run();
-    } catch (std::exception& ex) {
-        char_utils::print(ex.what());
+int main(int argc, char* argv[])
+try{
+    input_parser parser(argc, argv);
+    if(!parser.contains("-f")){
+        std::cerr << "No input provided!" << std::endl;
+        return 1;
     }
 
+    std::ifstream file(parser.get("-f"));
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    std::string text = buffer.str();
+
+    editor ed(text);
+    ed.run();
+
     return 0;
+} catch (std::exception& ex) {
+    char_utils::print(ex.what());
 }
