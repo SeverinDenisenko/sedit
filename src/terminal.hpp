@@ -33,25 +33,19 @@ protected:
 
     window_t window{};
     ansi::cursor::position_t position = {1, 1};
-    std::string buffer;
-
-    void setup();
-
-    void update();
-
-    void shutdown();
+    void update(const std::string& buffer);
 
     ansi::cursor::position_t getCursorPosition();
-
     window_t getWindow();
 
 private:
+    void setup();
+    void shutdown();
+
     struct termios orig{};
 
     void loadRaw();
-
     void loadOriginal();
-
     void saveOriginal();
 };
 

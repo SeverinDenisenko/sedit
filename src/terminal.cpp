@@ -18,7 +18,7 @@ void terminal::setup() {
     utils::print(alternate::on());
 }
 
-void terminal::update() {
+void terminal::update(const std::string& buffer) {
     window = getWindow();
 
     std::string sequence;

@@ -1,44 +1,9 @@
 #include <iostream>
 #include <chrono>
-#include <thread>
 #include <future>
-#include <queue>
 
 #include "terminal.hpp"
-
-enum command {
-    EXIT,
-    UP,
-    DOWN,
-    LEFT,
-    RIGHT
-};
-
-template<typename T>
-class queue {
-public:
-    queue() = default;
-
-    void push(T t) {
-        std::lock_guard lk(m);
-        queue_.push(t);
-    }
-
-    T pop() {
-        std::lock_guard lk(m);
-        T res = queue_.front();
-        queue_.pop();
-        return res;
-    }
-
-    bool empty() {
-        return queue_.empty();
-    }
-
-private:
-    std::mutex m;
-    std::queue<T> queue_;
-};
+#include "command_queue.hpp"
 
 class editor : public terminal {
 public:
@@ -47,86 +12,120 @@ public:
         using namespace colors;
         using namespace styles;
 
-        std::future read = std::async(std::launch::async, [this]() {
-            while (true) {
-                char c = utils::get();
+        std::thread read(std::move(reader));
+        std::thread process(std::move(processor));
+        std::thread render(std::move(renderer));
 
+        read.join();
+        process.join();
+        render.join();
+    }
+
+private:
+    using actor = std::packaged_task<void()>;
+
+    command_queue<void> commands;
+    std::string text;
+    std::atomic<bool> exit = false;
+
+    void processControlSequence() {
+        if (utils::get(exit) != '[')
+            return;
+        switch (utils::get(exit)) {
+            case 'A':
+                commands.emplace([this]() {
+                    if (position.row > 1)
+                        terminal::position.row -= 1;
+                });
+                break;
+            case 'B':
+                commands.emplace([this]() {
+                    if (position.row < window.rows)
+                        position.row += 1;
+                });
+                break;
+            case 'C':
+                commands.emplace([this]() {
+                    if (position.column < window.columns)
+                        position.column += 1;
+                });
+                break;
+            case 'D':
+                commands.emplace([this]() {
+                    if (terminal::position.column > 1)
+                        terminal::position.column -= 1;
+                });
+                break;
+            default:
+                break;
+        }
+    }
+
+    actor reader = actor([this]() {
+        while (true) {
+            char c = utils::get(exit);
+            if (exit)
+                return;
+
+            if (utils::printable(c)) {
+                commands.emplace([c, this]() {
+                    text += c;
+                    position.column++;
+                });
+            } else if (c == '\r' && utils::get(exit) == '\n') {
+                commands.emplace([this]() {
+                    text += "\n";
+                    position.column = 1;
+                    position.row++;
+                });
+            } else {
                 switch (c) {
-                    case ctrl & 'q':
-                        commands.push(EXIT);
-                        return;
+                    case backspace:
+                        commands.emplace([this]() {
+                            if (!text.empty()) {
+                                text.pop_back();
+                                position.column--;
+                            }
+                        });
+                        break;
+                    case esc & 'q':
+                        commands.emplace([this]() {
+                            exit = true;
+                        });
+                        break;
                     case esc:
-                        if (utils::get() != '[')
-                            break;
-                        switch (utils::get()) {
-                            case 'A':
-                                commands.push(UP);
-                                break;
-                            case 'B':
-                                commands.push(DOWN);
-                                break;
-                            case 'C':
-                                commands.push(RIGHT);
-                                break;
-                            case 'D':
-                                commands.push(LEFT);
-                                break;
-                            default:
-                                break;
-                        }
+                        processControlSequence();
                     default:
                         break;
                 }
             }
-        });
+        }
+    });
 
-        std::future write = std::async(std::launch::async, [this]() {
-            using namespace std::chrono_literals;
-            using namespace std::chrono;
+    actor processor = actor([this]() {
+        while (true) {
+            commands.wait_for_data(exit);
+            commands.pop();
+            if (exit)
+                return;
+        }
+    });
 
-            time_point<std::chrono::system_clock> t = system_clock::now();
+    actor renderer = actor([this]() {
+        using namespace std::chrono_literals;
+        using namespace std::chrono;
 
-            while (true) {
-                while (!commands.empty()) {
-                    command c = commands.pop();
+        time_point<std::chrono::system_clock> t = system_clock::now();
 
-                    switch (c) {
-                        case EXIT:
-                            terminal::shutdown();
-                            return;
-                        case UP:
-                            if (position.row > 1)
-                                terminal::position.row -= 1;
-                            break;
-                        case DOWN:
-                            if (terminal::position.row < terminal::window.rows)
-                                terminal::position.row += 1;
-                            break;
-                        case RIGHT:
-                            if (terminal::position.column < terminal::window.columns)
-                                terminal::position.column += 1;
-                            break;
-                        case LEFT:
-                            if (terminal::position.column > 1)
-                                terminal::position.column -= 1;
-                            break;
-                        default:
-                            break;
-                    }
-                }
+        while (true) {
+            if (exit)
+                return;
 
-                update();
-                t += 50ms;
-                std::this_thread::sleep_until(t);
-            }
-        });
-
-        read.wait();
-        write.wait();
-    }
-
-private:
-    queue<command> commands;
+            update(text);
+            t += 50ms;
+            std::this_thread::sleep_until(t);
+        }
+    });
 };
 
 

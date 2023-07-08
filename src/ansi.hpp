@@ -9,7 +9,8 @@
 
 namespace keys {
     inline const char esc = 27;
-    inline const char ctrl = 27;
+    inline const char backspace = 127;
+    inline const char newline = '\n';
 }
 
 namespace ansi {
