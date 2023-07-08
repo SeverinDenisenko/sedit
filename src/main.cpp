@@ -29,33 +29,42 @@ private:
     std::atomic<bool> exit = false;
 
     void processControlSequence() {
-        if (utils::get(exit) != '[')
-            return;
-        switch (utils::get(exit)) {
-            case 'A':
-                commands.emplace([this]() {
-                    if (position.row > 1)
-                        terminal::position.row -= 1;
-                });
+        char c = char_utils::get(exit);
+
+        switch (c) {
+            case '[': {
+                c = char_utils::get(exit);
+
+                switch (c) {
+                    case 'A':
+                        commands.emplace([this]() {
+                            if (position.row > 1)
+                                terminal::position.row -= 1;
+                        });
+                        break;
+                    case 'B':
+                        commands.emplace([this]() {
+                            if (position.row < window.rows)
+                                position.row += 1;
+                        });
+                        break;
+                    case 'C':
+                        commands.emplace([this]() {
+                            if (position.column < window.columns)
+                                position.column += 1;
+                        });
+                        break;
+                    case 'D':
+                        commands.emplace([this]() {
+                            if (terminal::position.column > 1)
+                                terminal::position.column -= 1;
+                        });
+                        break;
+                    default:
+                        break;
+                }
                 break;
-            case 'B':
-                commands.emplace([this]() {
-                    if (position.row < window.rows)
-                        position.row += 1;
-                });
-                break;
-            case 'C':
-                commands.emplace([this]() {
-                    if (position.column < window.columns)
-                        position.column += 1;
-                });
-                break;
-            case 'D':
-                commands.emplace([this]() {
-                    if (terminal::position.column > 1)
-                        terminal::position.column -= 1;
-                });
-                break;
+            }
             default:
                 break;
         }
@@ -63,20 +72,14 @@ private:
 
     actor reader = actor([this]() {
         while (true) {
-            char c = utils::get(exit);
+            char c = char_utils::get(exit);
             if (exit)
                 return;
 
-            if (utils::printable(c)) {
+            if (char_utils::printable(c)) {
                 commands.emplace([c, this]() {
                     text += c;
                     position.column++;
-                });
-            } else if (c == '\r' && utils::get(exit) == '\n') {
-                commands.emplace([this]() {
-                    text += "\n";
-                    position.column = 1;
-                    position.row++;
                 });
             } else {
                 switch (c) {
@@ -86,6 +89,14 @@ private:
                                 text.pop_back();
                                 position.column--;
                             }
+                        });
+                        break;
+                    case newline:
+                        commands.emplace([this]() {
+                            text += '\r';
+                            text += '\n';
+                            position.column = 1;
+                            position.row++;
                         });
                         break;
                     case esc & 'q':
@@ -134,7 +145,7 @@ int main() {
         editor ed;
         ed.run();
     } catch (std::exception& ex) {
-        utils::print(ex.what());
+        char_utils::print(ex.what());
     }
 
     return 0;

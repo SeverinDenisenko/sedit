@@ -5,12 +5,12 @@
 #ifndef SEDIT_ANSI_HPP
 #define SEDIT_ANSI_HPP
 
-#include "utils.hpp"
+#include "char_utils.hpp"
 
 namespace keys {
     inline const char esc = 27;
     inline const char backspace = 127;
-    inline const char newline = '\n';
+    inline const char newline = 13;
 }
 
 namespace ansi {

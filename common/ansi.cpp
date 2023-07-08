@@ -63,8 +63,8 @@ ansi::cursor::position_t ansi::cursor::get() {
     for (int i = 0; i < 32; ++i) {
         char c;
         try {
-            c = utils::get();
-        } catch (utils::io_exception& ex) {
+            c = char_utils::get();
+        } catch (char_utils::io_exception& ex) {
             break;
         }
 

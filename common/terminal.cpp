@@ -15,7 +15,7 @@ terminal::~terminal() {
 void terminal::setup() {
     saveOriginal();
     loadRaw();
-    utils::print(alternate::on());
+    char_utils::print(alternate::on());
 }
 
 void terminal::update(const std::string& buffer) {
@@ -29,16 +29,16 @@ void terminal::update(const std::string& buffer) {
     sequence += ansi::cursor::go(position.row, position.column);
     sequence += ansi::cursor::show();
 
-    utils::print(sequence);
+    char_utils::print(sequence);
 }
 
 void terminal::shutdown() {
     loadOriginal();
-    utils::print(alternate::off());
+    char_utils::print(alternate::off());
 }
 
 ansi::cursor::position_t terminal::getCursorPosition() {
-    utils::print(cursor::position());
+    char_utils::print(cursor::position());
     return cursor::get();
 }
 
@@ -46,7 +46,7 @@ terminal::window_t terminal::getWindow() {
     winsize ws{};
 
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {
-        utils::print(cursor::max());
+        char_utils::print(cursor::max());
 
         ansi::cursor::position_t p = getCursorPosition();
         return {p.row, p.column};
