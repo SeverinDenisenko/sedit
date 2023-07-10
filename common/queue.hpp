@@ -2,34 +2,16 @@
 // Created by Severin on 08.07.2023.
 //
 
-#ifndef SEDIT_COMMAND_QUEUE_HPP
-#define SEDIT_COMMAND_QUEUE_HPP
+#ifndef SEDIT_QUEUE_HPP
+#define SEDIT_QUEUE_HPP
 
 #include <queue>
 #include <mutex>
 
-
-template<typename R>
-class command {
-public:
-    using callback_type = std::function<R(void)>;
-
-    explicit command(callback_type callback) : callback(std::move(callback)) {
-
-    }
-
-    void operator()() {
-        callback();
-    }
-
-private:
-    callback_type callback;
-};
-
 template<typename T>
-class command_queue {
+class queue {
 public:
-    command_queue() = default;
+    queue() = default;
 
     template<typename ...A>
     void emplace(A&&... args){
@@ -38,12 +20,12 @@ public:
         cv.notify_all();
     }
 
-    void pop() {
+    T pop() {
         std::lock_guard lk(m);
-        command<T> res = queue_.front();
+        T res = queue_.front();
         queue_.pop();
-        res();
         cv.notify_all();
+        return res;
     }
 
     bool empty() {
@@ -60,8 +42,11 @@ public:
 private:
     std::mutex m;
     std::condition_variable cv;
-    std::queue<command<T>> queue_;
+    std::queue<T> queue_;
 };
 
+using command = std::function<void()>;
+using command_queue = queue<command>;
+using input_queue = queue<char>;
 
-#endif //SEDIT_COMMAND_QUEUE_HPP
+#endif //SEDIT_QUEUE_HPP

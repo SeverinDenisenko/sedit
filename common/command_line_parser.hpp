@@ -2,18 +2,18 @@
 // Created by Severin on 08.07.2023.
 //
 
-#ifndef SEDIT_INPUT_PARSER_HPP
-#define SEDIT_INPUT_PARSER_HPP
+#ifndef SEDIT_COMMAND_LINE_PARSER_HPP
+#define SEDIT_COMMAND_LINE_PARSER_HPP
 
 #include <fstream>
 #include <sstream>
 #include <vector>
 
-class input_parser {
+class command_line_parser {
 public:
-    class input_parser_exception: std::runtime_error {
+    class command_line_parser_exception: std::runtime_error {
     public:
-        explicit input_parser_exception(const std::string& message): std::runtime_error(message) {}
+        explicit command_line_parser_exception(const std::string& message): std::runtime_error(message) {}
     };
 
     template <typename T>
@@ -25,12 +25,12 @@ public:
         stream >> res;
 
         if(stream.fail())
-            throw input_parser_exception("can't parse string");
+            throw command_line_parser_exception("can't parse string");
 
         return res;
     }
 
-    input_parser(int argc, char* argv[]) {
+    command_line_parser(int argc, char* argv[]) {
         for (int i = 1; i < argc; ++i)
             tokens.emplace_back(argv[i]);
     }
@@ -41,7 +41,7 @@ public:
             return *itr;
         }
 
-        throw input_parser_exception("can't find argument");
+        throw command_line_parser_exception("can't find argument");
     }
 
     template <typename T>
@@ -50,7 +50,7 @@ public:
         if (itr != tokens.end() && ++itr != tokens.end())
             return lexical_cast<T>(*itr);
 
-        throw input_parser_exception("can't find argument");
+        throw command_line_parser_exception("can't find argument");
     }
 
     [[nodiscard]] bool contains(const std::string& option) const {
@@ -65,4 +65,4 @@ private:
     std::vector<std::string> tokens;
 };
 
-#endif //SEDIT_INPUT_PARSER_HPP
+#endif //SEDIT_COMMAND_LINE_PARSER_HPP

@@ -28,6 +28,7 @@ public:
 
     window_t window{};
     ansi::cursor::position_t position = {1, 1};
+    bool cursor_visible;
 
     terminal();
     ~terminal();
@@ -40,7 +41,7 @@ private:
     void setup();
     void shutdown();
 
-    struct termios orig{};
+    struct termios orig_{};
 
     void loadRaw();
     void loadOriginal();

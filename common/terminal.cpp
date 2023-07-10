@@ -22,12 +22,16 @@ void terminal::render(const std::string& buffer) {
     window = getWindow();
 
     std::string sequence;
+
     sequence += ansi::cursor::hide();
+
     sequence += erase::screen();
     sequence += cursor::home();
     sequence += buffer;
     sequence += ansi::cursor::go(position.row, position.column);
-    sequence += ansi::cursor::show();
+
+    if (cursor_visible)
+        sequence += ansi::cursor::show();
 
     char_utils::print(sequence);
 }
@@ -59,7 +63,7 @@ void terminal::loadRaw() {
     if (!isatty(STDIN_FILENO))
         throw terminal_exception("not on a tty");
 
-    termios raw = orig;
+    termios raw = orig_;
     raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
     raw.c_oflag &= ~(OPOST);
     raw.c_cflag |= (CS8);
@@ -72,10 +76,10 @@ void terminal::loadRaw() {
 }
 
 void terminal::loadOriginal() {
-    tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig);
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_);
 }
 
 void terminal::saveOriginal() {
-    if (tcgetattr(STDIN_FILENO, &orig) < 0)
+    if (tcgetattr(STDIN_FILENO, &orig_) < 0)
         throw terminal_exception("can't get tty settings");
 }
