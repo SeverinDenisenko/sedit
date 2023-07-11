@@ -211,8 +211,7 @@ protected:
     std::string render() override {
         std::string buffer;
 
-        for (size_t i = std::min(current_row_ - 1, (size_t) 0);
-             i < term.window.rows + current_row_ - 1 && i < text_.size(); ++i) {
+        for (size_t i = current_row_; i < term.window.rows + current_row_ - 1 && i < text_.size(); ++i) {
             buffer += text_[i];
             buffer += "\r\n";
         }
@@ -224,7 +223,7 @@ private:
     using input_machine_t = state_machine<char>;
 
     std::vector<std::string> text_;
-    size_t current_row_ = 1;
+    size_t current_row_ = 0;
     input_machine_t input_state_machine_;
 
     input_machine_t::state_ptr nothing;
@@ -265,12 +264,12 @@ private:
                     switch (ch) {
                         case 'A':
                             return command([this]() {
-                                if (current_row_ != 1)
+                                if (current_row_ != 0)
                                     current_row_--;
                             });
                         case 'B':
                             return command([this]() {
-                                if (current_row_ != text_.size() - term.window.rows - 1)
+                                if (current_row_ != text_.size())
                                     current_row_++;
                             });
                         case 'C':
