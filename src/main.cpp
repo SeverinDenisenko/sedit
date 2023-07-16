@@ -81,6 +81,8 @@ protected:
 
     void stop() {
         exit_ = true;
+        inputs_.notify();
+        commands_.notify();
     }
 
     terminal term;
@@ -106,13 +108,14 @@ private:
         while (true) {
             if (app.exit_)
                 break;
+            logger.info("Waiting for input.");
             app.inputs_.wait_for_data(app.exit_);
-            logger.info("Done waiting for data.");
+            logger.info("Done waiting for input.");
             if (app.exit_)
                 break;
 
             char input = app.inputs_.pop();
-            logger.info("Got data from inputs:" + std::to_string(input));
+            logger.info("Got data from inputs: " + std::to_string(input));
             auto res = app.process(input);
             logger.info("Got command for processor.");
             app.commands_.emplace(res);

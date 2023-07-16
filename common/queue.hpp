@@ -16,8 +16,6 @@ public:
         explicit queue_exception(const std::string& message) : std::runtime_error(message) {}
     };
 
-    queue() = default;
-
     template<typename ...A>
     void emplace(A&& ... args) {
         std::unique_lock lk(m);
@@ -34,6 +32,7 @@ public:
         T res = queue_.front();
         queue_.pop();
 
+        cv.notify_all();
         return res;
     }
 
@@ -44,6 +43,11 @@ public:
         std::unique_lock lk(m);
 
         cv.wait(lk, [this, &force_release]() { return !queue_.empty() || force_release; });
+        cv.notify_all();
+    }
+
+    void notify(){
+        cv.notify_all();
     }
 
 private:
