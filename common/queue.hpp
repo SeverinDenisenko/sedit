@@ -11,26 +11,30 @@
 template<typename T>
 class queue {
 public:
+    class queue_exception : public std::runtime_error {
+    public:
+        explicit queue_exception(const std::string& message) : std::runtime_error(message) {}
+    };
+
     queue() = default;
 
     template<typename ...A>
-    void emplace(A&&... args){
-        std::lock_guard lk(m);
+    void emplace(A&& ... args) {
+        std::unique_lock lk(m);
         queue_.emplace(std::forward<A>(args)...);
         cv.notify_all();
     }
 
     T pop() {
-        std::lock_guard lk(m);
+        std::unique_lock lk(m);
+
+        if (queue_.empty())
+            throw queue_exception("can't pop while nothing in the queue");
+
         T res = queue_.front();
         queue_.pop();
-        cv.notify_all();
-        return res;
-    }
 
-    bool empty() {
-        std::lock_guard lk(m);
-        return queue_.empty();
+        return res;
     }
 
     void wait_for_data(std::atomic<bool>& force_release) {

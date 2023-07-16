@@ -38,13 +38,13 @@ private:
 
 static inline logger logger("sedit.log");
 
-class application {
+class application{
 public:
     void run() {
-        std::thread read(std::move(reader));
-        std::thread convert(std::move(input_processor));
-        std::thread process(std::move(command_processor));
-        std::thread render(std::move(renderer));
+        std::thread read(reader, std::ref(*this));
+        std::thread convert(input_processor, std::ref(*this));
+        std::thread process(command_processor, std::ref(*this));
+        std::thread render(renderer, std::ref(*this));
 
         read.join();
         convert.join();
@@ -70,61 +70,67 @@ protected:
     terminal term;
 
 private:
-    using actor = std::packaged_task<void()>;
-
     command_queue commands_;
     input_queue inputs_;
     std::atomic<bool> exit_ = false;
 
-    actor reader = actor([this]() {
+    static void reader(application& app){
         while (true) {
-            char c = char_utils::get(exit_);
-            if (exit_)
+            char c = char_utils::get(app.exit_);
+            if (app.exit_)
                 return;
 
-            inputs_.emplace(c);
+            app.inputs_.emplace(c);
         }
-    });
 
-    actor input_processor = actor([this]() {
+        logger.info("Reader exited.");
+    }
+
+    static void input_processor(application& app){
         while (true) {
-            inputs_.wait_for_data(exit_);
-            if (exit_)
+            app.inputs_.wait_for_data(app.exit_);
+            if (app.exit_)
                 return;
 
-            char input = inputs_.pop();
-            commands_.emplace(process(input));
+            char input = app.inputs_.pop();
+            app.commands_.emplace(app.process(input));
         }
-    });
 
-    actor command_processor = actor([this]() {
+        logger.info("Input processor exited.");
+    }
+
+    static void command_processor(application& app){
         while (true) {
-            commands_.wait_for_data(exit_);
-            if (exit_)
+            app.commands_.wait_for_data(app.exit_);
+            if (app.exit_)
                 return;
 
-            auto command = commands_.pop();
+            auto command = app.commands_.pop();
             command();
         }
-    });
 
-    actor renderer = actor([this]() {
+        logger.info("Command processor exited.");
+    }
+
+    static void renderer(application& app){
         using namespace std::chrono_literals;
         using namespace std::chrono;
 
         time_point<std::chrono::system_clock> t = system_clock::now();
 
         while (true) {
-            if (exit_)
+            if (app.exit_)
                 return;
 
-            std::string buffer = render();
+            std::string buffer = app.render();
 
-            term.render(buffer);
+            app.term.render(buffer);
             t += 50ms;
             std::this_thread::sleep_until(t);
         }
-    });
+
+        logger.info("Renderer exited.");
+    }
 };
 
 template<typename T>
@@ -303,8 +309,8 @@ try {
         return 1;
     }
 
-    viewer view(parser.get("-f"));
-    view.run();
+    std::shared_ptr<application> app = std::make_shared<viewer>(parser.get("-f"));
+    app->run();
 
     return 0;
 } catch (std::exception& ex) {
