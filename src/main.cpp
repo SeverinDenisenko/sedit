@@ -1,58 +1,11 @@
 #include <iostream>
-#include <chrono>
 #include <future>
-#include <unordered_set>
-#include <numeric>
 
 #include "terminal.hpp"
 #include "queue.hpp"
 #include "command_line_parser.hpp"
-
-class logger {
-public:
-    explicit logger(const std::string& filename) {
-        stream_ = std::ofstream(filename);
-    }
-
-    void info(const std::string& msg) {
-        log("[INFO]: ", msg);
-    }
-
-    void warning(const std::string& msg) {
-        log("[WARNING]: ", msg);
-    }
-
-    void error(const std::string& msg) {
-        log("[ERROR]: ", msg);
-    }
-
-    void log(const std::string& label, const std::string& msg) {
-        using namespace std::chrono;
-
-        std::stringstream res;
-
-        res << std::this_thread::get_id() << ' ';
-
-        auto now = system_clock::now();
-        auto ms = duration_cast<milliseconds>(now.time_since_epoch()) % 1000;
-        auto timer = system_clock::to_time_t(now);
-        std::tm bt = *std::localtime(&timer);
-
-        res << std::put_time(&bt, "%H:%M:%S");
-        res << '.' << std::setfill('0') << std::setw(3) << ms.count() << ' ';
-        res << label;
-        res << msg;
-
-        std::lock_guard lk(m);
-        stream_ << res.str() << std::endl;
-    }
-
-private:
-    std::mutex m;
-    std::ofstream stream_;
-};
-
-static inline logger logger("sedit.log");
+#include "logger.hpp"
+#include "state_machine.hpp"
 
 class application{
 public:
@@ -159,56 +112,6 @@ private:
     }
 };
 
-template<typename T>
-class state {
-public:
-    using state_ptr = std::shared_ptr<state>;
-    using action_t = std::function<command(T)>;
-    using state_switch_t = std::function<state_ptr(T)>;
-
-    state(action_t action, state_switch_t state_switch) : action_(std::move(action)),
-                                                          state_switch_(std::move(state_switch)) {
-    }
-
-    explicit state(state_switch_t state_switch) : state_switch_(std::move(state_switch)) {
-    }
-
-    command act(T t) {
-        return action_(t);
-    };
-
-    state_ptr next(T t) {
-        return state_switch_(t);
-    };
-
-private:
-    action_t action_ = []([[maybe_unused]] char ch) {
-        return command([]() {
-        });
-    };
-    state_switch_t state_switch_;
-};
-
-template<typename T>
-class state_machine {
-public:
-    using state_t = state<T>;
-    using state_ptr = std::shared_ptr<state_t>;
-
-    command apply(T t) {
-        command res = current_->act(t);
-        current_ = current_->next(t);
-        return res;
-    }
-
-    void set_current(state_ptr current) {
-        current_ = current;
-    }
-
-private:
-    state_ptr current_;
-};
-
 class viewer : public application {
 public:
     explicit viewer(const std::string& filename) {
@@ -250,7 +153,7 @@ protected:
     }
 
 private:
-    using input_machine_t = state_machine<char>;
+    using input_machine_t = state_machine<char, command>;
 
     std::vector<std::string> text_;
     size_t current_row_ = 0;
@@ -329,6 +232,9 @@ private:
 
 int main(int argc, char* argv[])
 try {
+    logger.enable = false;
+    logger.init("sedit.log");
+
     command_line_parser parser(argc, argv);
     if (!parser.contains("-f")) {
         std::cerr << "No input provided!" << std::endl;
