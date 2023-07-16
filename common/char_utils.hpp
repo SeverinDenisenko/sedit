@@ -17,7 +17,7 @@ namespace char_utils {
 
     void print(const std::string& string);
 
-    char get(std::atomic<bool>& force_release);
+    char get(bool& force_release);
     char get();
 
     bool printable(char c);

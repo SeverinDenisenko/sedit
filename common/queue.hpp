@@ -37,7 +37,10 @@ public:
         return res;
     }
 
-    void wait_for_data(std::atomic<bool>& force_release) {
+    void wait_for_data(bool& force_release) {
+        if (force_release)
+            return;
+
         std::unique_lock lk(m);
 
         cv.wait(lk, [this, &force_release]() { return !queue_.empty() || force_release; });

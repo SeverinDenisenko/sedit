@@ -13,7 +13,7 @@ void char_utils::print(const std::string& string) {
         throw io_exception("can't print to screen");
 }
 
-char char_utils::get(std::atomic<bool>& force_release) {
+char char_utils::get(bool& force_release) {
     ssize_t code;
     char c;
     while ((code = read(STDIN_FILENO, &c, 1)) != 1) {

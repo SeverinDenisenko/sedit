@@ -27,8 +27,24 @@ public:
     }
 
     void log(const std::string& label, const std::string& msg) {
+        using namespace std::chrono;
+
+        std::stringstream res;
+
+        res << std::this_thread::get_id() << ' ';
+
+        auto now = system_clock::now();
+        auto ms = duration_cast<milliseconds>(now.time_since_epoch()) % 1000;
+        auto timer = system_clock::to_time_t(now);
+        std::tm bt = *std::localtime(&timer);
+
+        res << std::put_time(&bt, "%H:%M:%S");
+        res << '.' << std::setfill('0') << std::setw(3) << ms.count() << ' ';
+        res << label;
+        res << msg;
+
         std::lock_guard lk(m);
-        stream_ << label << msg << std::endl;
+        stream_ << res.str() << std::endl;
     }
 
 private:
@@ -72,13 +88,13 @@ protected:
 private:
     command_queue commands_;
     input_queue inputs_;
-    std::atomic<bool> exit_ = false;
+    bool exit_ = false;
 
     static void reader(application& app){
         while (true) {
             char c = char_utils::get(app.exit_);
             if (app.exit_)
-                return;
+                break;
 
             app.inputs_.emplace(c);
         }
@@ -88,12 +104,19 @@ private:
 
     static void input_processor(application& app){
         while (true) {
-            app.inputs_.wait_for_data(app.exit_);
             if (app.exit_)
-                return;
+                break;
+            app.inputs_.wait_for_data(app.exit_);
+            logger.info("Done waiting for data.");
+            if (app.exit_)
+                break;
 
             char input = app.inputs_.pop();
-            app.commands_.emplace(app.process(input));
+            logger.info("Got data from inputs:" + std::to_string(input));
+            auto res = app.process(input);
+            logger.info("Got command for processor.");
+            app.commands_.emplace(res);
+            logger.info("Send command to processor.");
         }
 
         logger.info("Input processor exited.");
@@ -103,7 +126,7 @@ private:
         while (true) {
             app.commands_.wait_for_data(app.exit_);
             if (app.exit_)
-                return;
+                break;
 
             auto command = app.commands_.pop();
             command();
@@ -120,7 +143,7 @@ private:
 
         while (true) {
             if (app.exit_)
-                return;
+                break;
 
             std::string buffer = app.render();
 
@@ -207,8 +230,6 @@ public:
         setupInputStateMachine();
     }
 
-    ~viewer() override = default;
-
 protected:
     command process(char ch) override {
         return input_state_machine_.apply(ch);
@@ -241,7 +262,9 @@ private:
                 [this](char ch) {
                     switch (ch) {
                         case esc & 'q':
+                            logger.info("Received exit command.");
                             return command([this]() {
+                                logger.info("Stopping.");
                                 stop();
                             });
                         default:
