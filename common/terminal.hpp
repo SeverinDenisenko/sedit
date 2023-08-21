@@ -6,6 +6,7 @@
 #define SEDIT_TERMINAL_HPP
 
 #include "ansi.hpp"
+#include "terminal_params.hpp"
 
 #include <termios.h>
 #include <unistd.h>
@@ -22,13 +23,13 @@ public:
 class terminal {
 public:
     struct window_t {
-        int rows;
-        int columns;
+        size_t rows;
+        size_t columns;
     };
 
     window_t window{};
     ansi::cursor::position_t position = {1, 1};
-    bool cursor_visible;
+    terminal_params params;
 
     terminal();
     ~terminal();

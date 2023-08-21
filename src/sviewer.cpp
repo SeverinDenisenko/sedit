@@ -7,7 +7,7 @@
 class viewer : public application {
 public:
     explicit viewer(const std::string& filename) {
-        term.cursor_visible = false;
+        term.params.cursor_visible = false;
         ansi::cursor::home();
 
         std::ifstream file(filename);
@@ -37,8 +37,9 @@ protected:
         std::string buffer;
 
         for (size_t i = current_row_; i < term.window.rows + current_row_ - 1 && i < text_.size(); ++i) {
-            buffer += text_[i];
-            buffer += "\r\n";
+            buffer += text_[i].substr(0, std::min(text_[i].size(), term.window.columns));
+            if (i != term.window.rows + current_row_ - 2)
+                buffer += "\r\n";
         }
 
         return buffer;

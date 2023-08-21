@@ -30,7 +30,7 @@ void terminal::render(const std::string& buffer) {
     sequence += buffer;
     sequence += ansi::cursor::go(position.row, position.column);
 
-    if (cursor_visible)
+    if (params.cursor_visible)
         sequence += ansi::cursor::show();
 
     char_utils::print(sequence);
@@ -38,6 +38,8 @@ void terminal::render(const std::string& buffer) {
 
 void terminal::shutdown() {
     loadOriginal();
+    if(!params.cursor_visible)
+        char_utils::print(cursor::show());
     char_utils::print(alternate::off());
 }
 
@@ -53,7 +55,7 @@ terminal::window_t terminal::getWindow() {
         char_utils::print(cursor::max());
 
         ansi::cursor::position_t p = getCursorPosition();
-        return {p.row, p.column};
+        return {(size_t) p.row, (size_t) p.column};
     }
 
     return {ws.ws_row, ws.ws_col};
