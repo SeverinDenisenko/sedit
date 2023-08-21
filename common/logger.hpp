@@ -36,6 +36,12 @@ public:
     }
 
     template<typename T>
+    void fatal(const T& msg) {
+        log("[FATAL]: ", msg);
+        exit(1);
+    }
+
+    template<typename T>
     void log(const std::string& label, const T& msg) {
         using namespace std::chrono;
 

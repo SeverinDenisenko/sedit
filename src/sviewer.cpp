@@ -10,10 +10,15 @@ public:
         term.params.cursor_visible = false;
         ansi::cursor::home();
 
-        std::ifstream file(filename);
-        if (!file) {
-            std::cout << "Can't open file!" << std::endl;
-            exit(1);
+        std::ifstream file;
+        file.exceptions(file.exceptions() | std::ios::failbit);
+
+        try{
+            file.open(filename);
+        } catch (std::ios_base::failure& ex) {
+            std::string msg = "Can't open file: " + filename + ". Reason: " + ex.what();
+            std::cout << msg << std::endl;
+            logger.fatal(msg);
         }
 
         std::string str;
@@ -146,7 +151,7 @@ try {
             file = parser.get<std::string>(0);
     } catch (command_line_parser::command_line_parser_exception& ex){
         std::cerr << "No input provided!" << std::endl;
-        return 1;
+        logger.fatal("No input provided!");
     }
 
     std::shared_ptr<application> app = std::make_shared<viewer>(file);
@@ -154,5 +159,5 @@ try {
 
     return 0;
 } catch (std::exception& ex) {
-    char_utils::print(ex.what());
+    std::cerr << ex.what() << std::endl;
 }
