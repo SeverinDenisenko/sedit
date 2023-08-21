@@ -138,12 +138,18 @@ try {
     logger.init("sedit.log");
 
     command_line_parser parser(argc, argv);
-    if (!parser.contains("-f")) {
+    std::string file;
+    try {
+        if (parser.contains("-f"))
+            file = parser.get<std::string>("-f");
+        else
+            file = parser.get<std::string>(0);
+    } catch (command_line_parser::command_line_parser_exception& ex){
         std::cerr << "No input provided!" << std::endl;
         return 1;
     }
 
-    std::shared_ptr<application> app = std::make_shared<viewer>(parser.get("-f"));
+    std::shared_ptr<application> app = std::make_shared<viewer>(file);
     app->run();
 
     return 0;

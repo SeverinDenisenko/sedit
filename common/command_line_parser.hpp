@@ -17,7 +17,7 @@ public:
     };
 
     template <typename T>
-    T lexical_cast(const std::string& str)
+    [[nodiscard]] T lexical_cast(const std::string& str) const
     {
         T res;
         std::istringstream stream;
@@ -30,18 +30,15 @@ public:
         return res;
     }
 
+    template <>
+    [[nodiscard]] std::string lexical_cast(const std::string& str) const
+    {
+        return str;
+    }
+
     command_line_parser(int argc, char* argv[]) {
         for (int i = 1; i < argc; ++i)
             tokens.emplace_back(argv[i]);
-    }
-
-    [[nodiscard]] const std::string& get(const std::string& option) const {
-        auto itr = std::find(tokens.begin(), tokens.end(), option);
-        if (itr != tokens.end() && ++itr != tokens.end()) {
-            return *itr;
-        }
-
-        throw command_line_parser_exception("can't find argument");
     }
 
     template <typename T>
@@ -49,6 +46,14 @@ public:
         auto itr = std::find(tokens.begin(), tokens.end(), option);
         if (itr != tokens.end() && ++itr != tokens.end())
             return lexical_cast<T>(*itr);
+
+        throw command_line_parser_exception("can't find argument");
+    }
+
+    template <typename T>
+    [[nodiscard]] T get(size_t option) const {
+        if (option < tokens.size())
+            return lexical_cast<T>(tokens[option]);
 
         throw command_line_parser_exception("can't find argument");
     }
