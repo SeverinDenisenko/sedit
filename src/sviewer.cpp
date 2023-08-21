@@ -36,8 +36,15 @@ protected:
     std::string render() override {
         std::string buffer;
 
+        size_t begin = current_frame_ * term.window.columns;
+        size_t end = begin + term.window.columns;
+
         for (size_t i = current_row_; i < term.window.rows + current_row_ - 1 && i < text_.size(); ++i) {
-            buffer += text_[i].substr(0, std::min(text_[i].size(), term.window.columns));
+            size_t first = std::min(text_[i].size(), begin);
+            size_t last = std::min(text_[i].size(), end);
+
+            buffer += text_[i].substr(first, last - first);
+
             if (i != term.window.rows + current_row_ - 2)
                 buffer += "\r\n";
         }
@@ -50,6 +57,7 @@ private:
 
     std::vector<std::string> text_;
     size_t current_row_ = 0;
+    size_t current_frame_ = 0;
     input_machine_t input_state_machine_;
 
     input_machine_t::state_ptr nothing;
@@ -101,12 +109,13 @@ private:
                                     current_row_++;
                             });
                         case 'C':
-                            return command([]() {
-                                // current_row_--;
+                            return command([this]() {
+                                current_frame_++;
                             });
                         case 'D':
-                            return command([]() {
-                                // current_row_++;
+                            return command([this]() {
+                                if (current_frame_ != 0)
+                                    current_frame_--;
                             });
                         default:
                             return command([]() {
